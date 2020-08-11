@@ -1,0 +1,31 @@
+plugins {
+    id 'java'
+}
+
+apply plugin: 'maven'
+
+repositories {
+    maven {
+        name 'IAS-public'
+        url "https://nexus.303net.net/repository/maven-public/"
+    }
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: nexusReleaseRepo) {
+                authentication(userName: nexusUsername, password: nexusPassword)
+            }
+
+            snapshotRepository(url: nexusSnapshotsRepo) {
+                authentication(userName: nexusUsername, password: nexusPassword)
+            }
+        }
+    }
+}

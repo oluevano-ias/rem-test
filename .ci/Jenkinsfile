@@ -1,0 +1,39 @@
+/*
+ Conceptually, the pipeline steps in this Jenkinsfile are event listeners, executing automatically
+ On specific types of webhooks from github.
+  These Named functions not defined in this file are exposed as global shared pipeline libraries, and
+ their shared namespace is automatically imported prior to running these steps.
+  Definitions can be found in https://github.com/integralads/jenkins-pipeline-scripts
+*/
+
+// Because we have multiple test HTML reports we will publish each of them from the Stash
+def tasks = [:]
+tasks['Publish test HTML report'] = {
+    buildAgent {
+       stage("Collect test report") {
+            unstash 'unitTestReports'
+            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/reports/tests/test', reportFiles: 'index.html', reportName: 'Unit Test HTML Report', reportTitles: ''])
+       }
+    }
+}
+
+if(isPRBuild()) {
+    // only execute on pull request
+    stage("Publish test reports") {
+        parallel(tasks)
+    }
+}
+
+linkToExternalSonarReport()
+
+// By including this event, we will create tags in github on updates to the "master" branch
+createTagOnMergeTo("master")
+
+// By including this event, we will publish tags to nexus when they're created in github
+//   this will ultimately invoke Gradle with: clean assemble upload
+publishToNexusOnNewTag()
+
+if(isTagBuild()) {
+    notify_slack('#nemo-notifications', "${env.JERVIS_PROJECT} ${env.JERVIS_BRANCH} has been released.  See also 'woodhouse latest ${env.JERVIS_PROJECT}'")
+}
+

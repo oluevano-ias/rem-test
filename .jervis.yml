@@ -1,0 +1,20 @@
+language: java
+# Testing logic/steps
+script:
+  # *sonarqube* task will build the project, run both unit & integration tests, and upload to Sonarqube
+  - ./gradlew clean sonarqube
+branches:
+  only:
+    - master
+
+jenkins:
+  pipeline_jenkinsfile: .ci/Jenkinsfile
+  stash:
+    # Stash the Unit test reports for publication into the Jenkins UI
+    - name: unitTestReports
+      includes: 'build/reports/test/**/*'
+    - name: integrationTestReports
+      includes: 'build/reports/integrationTest/**/*'
+  collect:
+    # ./test & ./integrationTest
+    junit: build/test-results/**/*.xml
